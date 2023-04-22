@@ -1,7 +1,7 @@
 # Интернет-магазин
 
 ## Деплой
-
+https://melodic-otter-7f4623.netlify.app/
 
 ## Стек
 
