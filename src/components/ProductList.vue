@@ -62,6 +62,7 @@ watch(
 <style scoped>
 .products-list {
   display: grid;
+  grid-auto-rows: 1fr;
   gap: 25px;
   list-style: none;
   padding: 0;
