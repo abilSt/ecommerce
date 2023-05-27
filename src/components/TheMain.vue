@@ -1,126 +1,101 @@
 <template>
   <main class="main">
     <teleport to="body">
-      <base-modal :isModalOpen="isCartModalOpen" type="cart" title="Your cart">
-        <cart
-          :products="cart"
-          v-if="isCartNotEmpty"
-          @onClick="closeModal('cart')"
-        ></cart>
+      <BaseModal :isModalOpen="isCartModalOpen" type="cart" title="Your cart">
+        <Cart v-if="isProductsInCart" @onClick="closeModal('cart')" />
         <p v-else>Your cart is empty</p>
         <template #actions>
-          <router-link to="/checkout" v-if="isCartNotEmpty">
-            <base-button
+          <router-link to="/checkout" v-if="isProductsInCart">
+            <BaseButton
               variant="contained"
               mode="success"
               @click="closeModal('cart')"
-              >Checkout</base-button
+              >Checkout</BaseButton
             >
           </router-link>
         </template>
-      </base-modal>
+      </BaseModal>
     </teleport>
 
     <teleport to="body">
-      <base-modal
+      <BaseModal
         :isModalOpen="isLikesModalOpen"
         type="likes"
         title="Your likes"
       >
-        <likes
-          :likedProducts="likes"
-          v-if="likes.length > 0"
-          @onClick="closeModal('likes')"
-        ></likes>
+        <Likes v-if="isLikes" @onClick="closeModal('likes')" />
         <p v-else>No likes yet</p>
-      </base-modal>
+      </BaseModal>
     </teleport>
 
     <router-view v-slot="{ Component }">
-      <fade-transition>
+      <FadeTransition>
         <component :is="Component" />
-      </fade-transition>
+      </FadeTransition>
     </router-view>
   </main>
 </template>
 
-<script>
+<script setup>
 import { getFromLocalStorage, setToLocalStorage } from "@/utils/helpers";
-import { mapActions, mapState } from "vuex";
 import BaseModal from "./UI/BaseModal.vue";
 import Cart from "./Cart.vue";
 import BaseButton from "./UI/Buttons/BaseButton.vue";
 import Likes from "./Likes.vue";
 import FadeTransition from "./UI/FadeTransition.vue";
-export default {
-  components: { BaseModal, Cart, BaseButton, Likes, FadeTransition },
-  computed: {
-    ...mapState([
-      "cart",
-      "likes",
-      "products",
-      "isLikesModalOpen",
-      "isCartModalOpen",
-    ]),
-    isCartEmpty() {
-      return this.cart.length === 0;
-    },
+import { computed, onMounted, watch } from "@vue/runtime-core";
+import { useProductStore } from "@/store/useProductStore";
+import { storeToRefs } from "pinia";
+import { useCartStore } from "@/store/useCartStore";
+import { useLikeStore } from "@/store/useLikeStore";
+import { useCommonStore } from "@/store/useCommonStore";
 
-    isNoLikes() {
-      return this.likes.length === 0;
-    },
+const productStore = useProductStore();
+const cartStore = useCartStore();
+const likeStore = useLikeStore();
+const commonStore = useCommonStore();
 
-    isNoProducts() {
-      return this.products.length === 0;
-    },
+const { products, isProducts } = storeToRefs(productStore);
+const { isCartModalOpen, isLikesModalOpen } = storeToRefs(commonStore);
+const { isLikes, likes } = storeToRefs(likeStore);
+const { isProductsInCart, cart } = storeToRefs(cartStore);
 
-    isCartNotEmpty() {
-      return this.cart.length > 0;
-    },
-  },
-
-  methods: {
-    ...mapActions(["setDataFromLocalStorage", "fetchProducts", "closeModal"]),
-  },
-
-  watch: {
-    cart: {
-      deep: true,
-      handler() {
-        setToLocalStorage("cart", this.cart);
-      },
-    },
-    likes: {
-      deep: true,
-      handler() {
-        setToLocalStorage("likes", this.likes);
-      },
-    },
-  },
-
-  mounted() {
-    const localStorageCart = getFromLocalStorage("cart");
-    const localStorageLikes = getFromLocalStorage("likes");
-
-    if (localStorageCart && this.isCartEmpty) {
-      this.setDataFromLocalStorage({
-        mutation: "setProductToCart",
-        products: localStorageCart,
-      });
-    }
-
-    if (localStorageLikes && this.isNoLikes) {
-      this.setDataFromLocalStorage({
-        mutation: "setLike",
-        products: localStorageLikes,
-      });
-    }
-
-    if (this.isNoProducts) {
-      this.fetchProducts();
-    }
-  },
+const closeModal = (modal) => {
+  commonStore.closeModal(modal);
 };
+
+watch(
+  () => cart.value,
+  () => {
+    setToLocalStorage("cart", cart.value);
+  },
+  { deep: true }
+);
+
+watch(
+  () => likes.value,
+  () => {
+    setToLocalStorage("likes", likes.value);
+  },
+  { deep: true }
+);
+
+onMounted(() => {
+  const localStorageCart = getFromLocalStorage("cart");
+  const localStorageLikes = getFromLocalStorage("likes");
+
+  if (localStorageCart && !isProductsInCart.value) {
+    cartStore.setProductsFromLStoCart(localStorageCart);
+  }
+
+  if (localStorageLikes && !isLikes.value) {
+    likeStore.setLikesFromLS(localStorageLikes);
+  }
+
+  if (!isProducts.value) {
+    productStore.fetchProducts();
+  }
+});
 </script>
 
 <style scoped>

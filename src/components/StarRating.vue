@@ -2,16 +2,16 @@
   <div class="star-rating">
     <div class="star-rating__stars">
       <span v-for="star in starLimit" :key="star">
-        <base-icon fill="lightgray">
-          <star-icon></star-icon>
-        </base-icon>
+        <BaseIcon fill="lightgray">
+          <StarIcon />
+        </BaseIcon>
       </span>
 
       <div class="star-rating__contained">
         <span v-for="star in starLimit" :key="star">
-          <base-icon fill="#ffa801">
-            <star-icon></star-icon>
-          </base-icon>
+          <BaseIcon fill="#ffa801">
+            <StarIcon />
+          </BaseIcon>
         </span>
       </div>
     </div>
@@ -20,28 +20,23 @@
   </div>
 </template>
 
-<script>
+<script setup>
 import BaseIcon from "./UI/BaseIcon.vue";
 import StarIcon from "@/components/icons/StarIcon.vue";
-export default {
-  components: { BaseIcon, StarIcon },
-  props: {
-    rating: {
-      type: Number,
-      required: true,
-    },
-    starLimit: {
-      type: Number,
-      default: 5,
-    },
-  },
+import { computed } from "@vue/runtime-core";
 
-  computed: {
-    ratingWidth() {
-      return (this.rating * 100) / this.starLimit;
-    },
+const props = defineProps({
+  rating: {
+    type: Number,
+    required: true,
   },
-};
+  starLimit: {
+    type: Number,
+    default: 5,
+  },
+});
+
+const ratingWidth = computed(() => (props.rating * 100) / props.starLimit);
 </script>
 
 <style scoped>

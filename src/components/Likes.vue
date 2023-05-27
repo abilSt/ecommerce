@@ -1,7 +1,7 @@
 <template>
   <ul class="likes">
     <li
-      v-for="likedProduct in likedProducts"
+      v-for="likedProduct in likes"
       :key="likedProduct.id"
       class="likes__item"
     >
@@ -9,12 +9,12 @@
         :src="likedProduct.image"
         :alt="likedProduct.title"
         class="likes__image"
-        @click="onClick(likedProduct.id)"
+        @click="goToProductPage(likedProduct.id)"
       />
       <div class="likes__product-info">
         <span
           class="likes__product-info-title"
-          @click="onClick(likedProduct.id)"
+          @click="goToProductPage(likedProduct.id)"
           >{{ likedProduct.title }}</span
         >
 
@@ -28,43 +28,42 @@
           >
         </div>
       </div>
-      <base-icon-button
-        @click="handleLikes(likedProduct)"
+      <BaseIconButton
+        @click="unLike(likedProduct)"
         variant="contained"
         iconHoverColor="#ef2525"
         iconColor="#74747474"
         opacity="1"
       >
-        <delete-icon></delete-icon>
-      </base-icon-button>
+        <DeleteIcon />
+      </BaseIconButton>
     </li>
   </ul>
 </template>
 
-<script>
-import { mapActions } from "vuex";
+<script setup>
 import DeleteIcon from "./icons/DeleteIcon.vue";
 import BaseButton from "./UI/Buttons/BaseButton.vue";
 import BaseIconButton from "./UI/Buttons/BaseIconButton.vue";
 import IconBase from "./UI/BaseIcon.vue";
-export default {
-  emits: ["onClick"],
-  components: { BaseButton, IconBase, DeleteIcon, BaseIconButton },
-  props: {
-    likedProducts: {
-      type: Array,
-      required: true,
-    },
-  },
+import { useRouter } from "vue-router";
+import { useLikeStore } from "@/store/useLikeStore";
+import { storeToRefs } from "pinia";
 
-  methods: {
-    ...mapActions(["handleLikes"]),
+const emit = defineEmits(["onClick"]);
 
-    onClick(id) {
-      this.$router.push(`/product/${id}`);
-      this.$emit("onClick", "likes");
-    },
-  },
+const likeStore = useLikeStore();
+const { likes } = storeToRefs(likeStore);
+
+const router = useRouter();
+
+const unLike = (product) => {
+  likeStore.handleLikes(product);
+};
+
+const goToProductPage = (id) => {
+  router.push(`/product/${id}`);
+  emit("onClick", "likes");
 };
 </script>
 
@@ -97,6 +96,7 @@ export default {
 }
 
 .likes__product-info-title {
+  text-align: left;
   cursor: pointer;
 }
 

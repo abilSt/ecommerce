@@ -2,108 +2,72 @@
   <div class="catalog">
     <div class="catalog__header">
       <div class="catalog__header-container">
-        <base-heading variant="h2">Catalog</base-heading>
-        <category-tabs
-          :items="categories"
+        <BaseHeading variant="h2">Catalog</BaseHeading>
+        <CategoryTabs
+          :items="allCategories"
           @onCategoryClick="setActiveCategory"
-          v-if="isTabsVisible"
-        ></category-tabs>
+          v-if="isProducts"
+        />
       </div>
-
-      <hr />
+      <BaseDivider />
     </div>
 
-    <fade-transition>
-      <failed-http-request
+    <FadeTransition>
+      <FailedHttpRequest
         :errorCode="error.errorCode"
         :errorMessage="error.message"
         :timeout="error.timeout"
         :serverIsDown="serverStatus.isDown"
         :serverErrorMessage="serverStatus.message"
         v-if="error?.isError && !isLoading"
-      ></failed-http-request>
-    </fade-transition>
+      />
+    </FadeTransition>
 
     <div class="catalog__loader">
-      <fade-transition>
-        <loader v-if="isLoading"></loader>
-      </fade-transition>
+      <FadeTransition>
+        <Loader v-if="isLoading" />
+      </FadeTransition>
     </div>
 
-    <product-list :products="productList"></product-list>
+    <ProductList :products="productList" />
   </div>
 </template>
 
-<script>
+<script setup>
 import BaseHeading from "./UI/BaseHeading.vue";
 import CategoryTabs from "./CategoryTabs.vue";
-import BaseCard from "./UI/BaseCard.vue";
-import Card from "./Card.vue";
-import { mapActions, mapGetters, mapState } from "vuex";
 import ProductList from "./ProductList.vue";
-import BaseModal from "./UI/BaseModal.vue";
-import Cart from "./Cart.vue";
-import BaseButton from "./UI/Buttons/BaseButton.vue";
 import FailedHttpRequest from "./FailedHttpRequest.vue";
-import Likes from "./Likes.vue";
 import Loader from "./UI/Loader.vue";
 import FadeTransition from "./UI/FadeTransition.vue";
+import BaseDivider from '@/components/UI/BaseDivider.vue'
+import { ref } from "@vue/reactivity";
+import { computed } from "@vue/runtime-core";
+import { useProductStore } from "@/store/useProductStore";
+import { storeToRefs } from "pinia";
 
-export default {
-  components: {
-    BaseHeading,
-    CategoryTabs,
-    BaseCard,
-    Card,
-    ProductList,
-    BaseModal,
-    Cart,
-    BaseButton,
-    Likes,
-    FailedHttpRequest,
-    Loader,
-    FadeTransition,
-  },
+const productStore = useProductStore();
+const {
+  products,
+  isProducts,
+  allCategories,
+  isLoading,
+  error,
+  serverStatus,
+} = storeToRefs(productStore);
 
-  data() {
-    return {
-      activeCategory: "all",
-    };
-  },
+const activeCategory = ref("all");
 
-  methods: {
-    ...mapActions(["fetchProducts", "closeModal", "setDataFromLocalStorage"]),
-
-    setActiveCategory(activeCategory) {
-      this.activeCategory = activeCategory;
-    },
-  },
-
-  computed: {
-    ...mapGetters(["categories"]),
-    ...mapState([
-      "products",
-      "isCartModalOpen",
-      "cart",
-      "likes",
-      "isLikesModalOpen",
-      "error",
-      "isLoading",
-      "serverStatus",
-    ]),
-
-    productList() {
-      if (this.activeCategory === "all") return this.products;
-      return this.products.filter(
-        (product) => product.category === this.activeCategory
-      );
-    },
-
-    isTabsVisible() {
-      return this.products.length > 0;
-    },
-  },
+const setActiveCategory = (selectedCategory) => {
+  activeCategory.value = selectedCategory;
 };
+
+const productList = computed(() => {
+  if (activeCategory.value === "all") return products.value;
+  return products.value.filter(
+    (product) => product.category === activeCategory.value
+  );
+});
 </script>
 
 <style scoped>
@@ -126,13 +90,6 @@ export default {
   display: flex;
   flex-direction: column;
   gap: 20px;
-}
-
-hr {
-  border: 0;
-  width: 100%;
-  border-top: 2px solid #f6f6f6;
-  margin: 0;
 }
 
 .catalog__loader {

@@ -1,42 +1,37 @@
 <template>
   <div class="quantity">
-    <base-icon-button
-      @click="$emit('decrement')"
+    <BaseIconButton
+      @click="emit('decrement')"
       :isDisabled="isButtonDisabled"
       variant="outlined"
     >
-      <minus-icon></minus-icon>
-    </base-icon-button>
+      <MinusIcon />
+    </BaseIconButton>
 
     <span class="quantity__count">{{ quantity }}</span>
 
-    <base-icon-button @click="$emit('increment')" variant="outlined">
-      <plus-icon></plus-icon>
-    </base-icon-button>
+    <BaseIconButton @click="emit('increment')" variant="outlined">
+      <PlusIcon />
+    </BaseIconButton>
   </div>
 </template>
 
-<script>
+<script setup>
 import PlusIcon from "../icons/PlusIcon.vue";
 import MinusIcon from "../icons/MinusIcon.vue";
 import BaseIconButton from "./Buttons/BaseIconButton.vue";
+import { computed } from "@vue/runtime-core";
 
-export default {
-  components: { PlusIcon, MinusIcon, BaseIconButton },
-  emits: ["increment", "decrement"],
-  props: {
-    quantity: {
-      type: Number,
-      required: true,
-      default: 1,
-    },
+const emit = defineEmits(["increment", "decrement"]);
+const props = defineProps({
+  quantity: {
+    type: Number,
+    required: true,
+    default: 1,
   },
-  computed: {
-    isButtonDisabled() {
-      return this.quantity <= 1;
-    },
-  },
-};
+});
+
+const isButtonDisabled = computed(() => props.quantity <= 1);
 </script>
 
 <style scoped>

@@ -1,17 +1,14 @@
 <template>
   <div class="failed-http-request">
-    <fade-transition :duration="2">
-      <base-heading variant="h2" v-if="serverIsDown">{{
+    <FadeTransition :duration="2">
+      <BaseHeading variant="h2" v-if="serverIsDown">{{
         serverErrorMessage
-      }}</base-heading>
-    </fade-transition>
+      }}</BaseHeading>
+    </FadeTransition>
 
     <div class="failed-http-request__timer" v-if="!isFetching">
       <base-heading variant="h3">{{ errorMessage }}</base-heading>
-      <count-down-timer
-        :timeout="timeout"
-        @onTimerEnd="onFetchRequest"
-      ></count-down-timer>
+      <CountDownTimer :timeout="timeout" @onTimerEnd="onFetchRequest" />
       <span class="failed-http-request__status"
         >Error code: <strong>{{ errorCode }}</strong></span
       >
@@ -22,63 +19,55 @@
       class="failed-http-request__sending-request"
     >
       <base-heading variant="h3">Sending new request...</base-heading>
-      <loader></loader>
+      <Loader />
     </div>
   </div>
 </template>
 
-<script>
+<script setup>
+import { ref } from "@vue/reactivity";
+import { watch } from "@vue/runtime-core";
 import CountDownTimer from "./CountDownTimer.vue";
 import BaseHeading from "./UI/BaseHeading.vue";
 import FadeTransition from "./UI/FadeTransition.vue";
 import Loader from "./UI/Loader.vue";
 
-export default {
-  components: { CountDownTimer, Loader, FadeTransition, BaseHeading },
-  props: {
-    errorMessage: {
-      type: String,
-      required: true,
-    },
-    errorCode: {
-      type: Number,
-      required: false,
-    },
-    timeout: {
-      type: Number,
-      required: true,
-    },
-    serverIsDown: {
-      type: Boolean,
-      required: true,
-    },
-    serverErrorMessage: {
-      type: [null, String],
-      required: true,
-    },
+const props = defineProps({
+  errorMessage: {
+    type: String,
+    required: true,
   },
+  errorCode: {
+    type: Number,
+    required: false,
+  },
+  timeout: {
+    type: Number,
+    required: true,
+  },
+  serverIsDown: {
+    type: Boolean,
+    required: true,
+  },
+  serverErrorMessage: {
+    type: [null, String],
+    required: true,
+  },
+});
 
-  data() {
-    return {
-      isFetching: false,
-    };
-  },
+const isFetching = ref(false);
 
-  methods: {
-    onFetchRequest() {
-      this.isFetching = true;
-    },
-  },
-
-  watch: {
-    timeout: {
-      immediate: true,
-      handler() {
-        this.isFetching = false;
-      },
-    },
-  },
+const onFetchRequest = () => {
+  isFetching.value = true;
 };
+
+watch(
+  () => props.timeout,
+  () => {
+    isFetching.value = false;
+  },
+  { immediate: true }
+);
 </script>
 
 <style scoped>

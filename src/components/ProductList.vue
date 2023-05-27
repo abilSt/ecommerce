@@ -1,73 +1,62 @@
 <template>
-  <fade-transition-group class="products-list">
+  <FadeTransitionGroup class="products-list">
     <li
       class="products-list__item"
       v-for="product in productsToRender"
       :key="product.id"
     >
-      <card
+      <Card
         :image="product.image"
         :price="product.price"
         :title="product.title"
         :rating="product.rating"
         :id="product.id"
-      ></card>
+      />
     </li>
-  </fade-transition-group>
+  </FadeTransitionGroup>
 
   <div
     class="products-list__show-more"
     v-if="itemsCountToRender < products.length"
   >
-    <show-more
+    <ShowMore
       :count="itemsCountToRender"
       :listLength="products.length"
       @onShowMoreClick="handleShowMore"
-    ></show-more>
+    />
   </div>
 </template>
 
-<script>
+<script setup>
 import Card from "./Card.vue";
-import Loader from "./UI/Loader.vue";
 import ShowMore from "./ShowMore.vue";
 import FadeTransitionGroup from "./UI/FadeTransitionGroup.vue";
+import { computed, ref, watch } from "@vue/runtime-core";
 
 const PRODUCTS_LIMIT = 4;
+let itemsCountToRender = ref(PRODUCTS_LIMIT);
 
-export default {
-  components: { Card, Loader, ShowMore, FadeTransitionGroup },
-  props: {
-    products: {
-      type: Array,
-      required: true,
-    },
+const props = defineProps({
+  products: {
+    type: Array,
+    required: true,
   },
+});
 
-  data() {
-    return {
-      itemsCountToRender: PRODUCTS_LIMIT,
-    };
-  },
-
-  methods: {
-    handleShowMore(count) {
-      this.itemsCountToRender = count;
-    },
-  },
-
-  computed: {
-    productsToRender() {
-      return this.products.slice(0, this.itemsCountToRender);
-    },
-  },
-
-  watch: {
-    products() {
-      this.itemsCountToRender = PRODUCTS_LIMIT;
-    },
-  },
+const handleShowMore = (count) => {
+  itemsCountToRender.value = count;
 };
+
+const productsToRender = computed(() =>
+  props.products.slice(0, itemsCountToRender.value)
+);
+
+watch(
+  () => props.products,
+  () => {
+    itemsCountToRender.value = PRODUCTS_LIMIT;
+  }
+);
 </script>
 
 <style scoped>

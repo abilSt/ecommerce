@@ -1,29 +1,27 @@
 <template>
   <div class="checkout-success">
-    <base-heading variant="h1" class="checkout-success__title"
-      >Success</base-heading
+    <BaseHeading variant="h1" class="checkout-success__title"
+      >Success</BaseHeading
     >
-    <base-heading variant="h3" class="checkout-success__subtitle"
-      >You will be redirected to homepage in</base-heading
+    <BaseHeading variant="h3" class="checkout-success__subtitle"
+      >You will be redirected to homepage in</BaseHeading
     >
-    <count-down-timer
+    <CountDownTimer
       :timeout="5"
       @onTimerEnd="redirectToHomepage"
-    ></count-down-timer>
+    ></CountDownTimer>
   </div>
 </template>
 
-<script>
+<script setup>
 import CountDownTimer from "@/components/CountDownTimer.vue";
 import BaseHeading from "@/components/UI/BaseHeading.vue";
-export default {
-  components: { CountDownTimer, BaseHeading },
+import { useRouter } from "vue-router";
 
-  methods: {
-    redirectToHomepage() {
-      this.$router.push("/");
-    },
-  },
+const router = useRouter();
+
+const redirectToHomepage = () => {
+  router.replace("/");
 };
 </script>
 

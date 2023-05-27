@@ -13,46 +13,48 @@
 
     <ul>
       <li>
-        <base-button-with-badge
-          :quantity="totalLikes"
-          @click="openModal('likesModal')"
-        >
-          <like-icon></like-icon>
-        </base-button-with-badge>
+        <BaseButtonWithBadge :quantity="totalLikes" @click="openModal('likes')">
+          <LikeIcon />
+        </BaseButtonWithBadge>
       </li>
 
       <li>
-        <base-button-with-badge
-          :quantity="cartTotalProductsQuantity"
-          @click="openModal('cartModal')"
+        <BaseButtonWithBadge
+          :quantity="totalProductsAddedToCart"
+          @click="openModal('cart')"
         >
-          <cart-icon></cart-icon>
-        </base-button-with-badge>
+          <CartIcon />
+        </BaseButtonWithBadge>
       </li>
     </ul>
   </header>
 </template>
 
-<script>
-import { mapActions, mapGetters } from "vuex";
+<script setup>
+import { useCartStore } from "@/store/useCartStore";
+import { useCommonStore } from "@/store/useCommonStore";
+import { useLikeStore } from "@/store/useLikeStore";
+import { computed } from "@vue/runtime-core";
+import { storeToRefs } from "pinia";
+import { useRoute } from "vue-router";
+
 import CartIcon from "./icons/CartIcon.vue";
-
 import LikeIcon from "./icons/LikeIcon.vue";
-import BaseHeading from "./UI/BaseHeading.vue";
 import BaseButtonWithBadge from "./UI/Buttons/BaseButtonWithBadge.vue";
-export default {
-  components: { CartIcon, LikeIcon, BaseButtonWithBadge, BaseHeading },
 
-  methods: {
-    ...mapActions(["openModal"]),
-  },
-  computed: {
-    ...mapGetters(["cartTotalProductsQuantity", "totalLikes"]),
+const route = useRoute();
 
-    isHomepage() {
-      return this.$route.fullPath === "/";
-    },
-  },
+const cartStore = useCartStore();
+const likeStore = useLikeStore();
+const commonStore = useCommonStore();
+
+const { totalProductsAddedToCart } = storeToRefs(cartStore);
+const { totalLikes } = storeToRefs(likeStore);
+
+const isHomepage = computed(() => route.fullPath === "/");
+
+const openModal = (modal) => {
+  commonStore.openModal(modal);
 };
 </script>
 

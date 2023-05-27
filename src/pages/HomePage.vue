@@ -1,13 +1,9 @@
 <template>
-  <catalog></catalog>
+  <Catalog />
 </template>
 
-<script>
+<script setup>
 import Catalog from '@/components/Catalog.vue';
-
-export default {
-  components: { Catalog },
-};
 </script>
 
 <style scoped></style>

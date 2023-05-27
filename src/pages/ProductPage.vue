@@ -1,34 +1,34 @@
 <template>
-  <failed-http-request
+  <FailedHttpRequest
     :errorCode="error.errorCode"
     :errorMessage="error.message"
     :timeout="error.timeout"
     :serverIsDown="serverStatus.isDown"
     :serverErrorMessage="serverStatus.message"
     v-if="error?.isError && !isLoading"
-  ></failed-http-request>
+  />
 
   <div class="product-page" v-else>
-    <loader v-if="isLoading"></loader>
-    <base-card class="product-page__card" v-else>
+    <Loader v-if="isLoading" />
+    <BaseCard class="product-page__card" v-else>
       <img
-        :src="currentProduct.image"
-        :alt="currentProduct.title"
+        :src="product.image"
+        :alt="product.title"
         class="product-page__card-image"
       />
       <div class="product-page__card-content">
-        <base-heading variant="h1" class="product-page__card-title"
-          >{{ currentProduct.title }}
-        </base-heading>
+        <BaseHeading variant="h1" class="product-page__card-title"
+          >{{ product.title }}
+        </BaseHeading>
 
-        <base-divider></base-divider>
+        <BaseDivider />
         <div class="product-page__card-rating">
-          <star-rating :rating="currentProduct.rating.rate"></star-rating>
+          <StarRating :rating="product.rating.rate" />
 
-          <base-icon-button
-            @click="handleLikeClick"
+          <BaseIconButton
+            @click="like"
             variant="contained"
-            :text="addToWishlistBtnText"
+            :text="likeBtnText"
             iconColor="lightgray"
             iconHoverColor="#ef2525"
             iconActiveColor="#ef2525"
@@ -36,133 +36,111 @@
             opacity="0.5"
             :class="likeClass"
           >
-            <like-icon></like-icon>
-          </base-icon-button>
+            <LikeIcon />
+          </BaseIconButton>
         </div>
         <div class="product-page__card-actions">
-          <base-heading variant="h2">${{ currentProduct.price }}</base-heading>
+          <BaseHeading variant="h2">${{ product.price }}</BaseHeading>
           <div class="product-page__card-actions-buy">
-            <quantity-block
+            <QuantityBlock
               @decrement="decrementQuantity"
               @increment="incrementQuantity"
               :quantity="quantity"
-            ></quantity-block>
-            <base-button
+              v-if="!isProductAlreadyInCart"
+            />
+            <BaseButton
               variant="contained"
               mode="success"
-              @click="handleAddToCartClick"
+              @click="addToCart"
               v-if="!isProductAlreadyInCart"
-              >Add to cart</base-button
+              >Add to cart</BaseButton
             >
 
-            <base-button
-              @click="openModal"
+            <BaseButton
+              @click="openModal('cart')"
               variant="contained"
               mode="success"
               v-else
-              >Already is in your Cart</base-button
+              >Already is in your Cart</BaseButton
             >
           </div>
         </div>
         <div class="product-page__card-description">
-          <base-heading variant="h3">Description</base-heading>
+          <BaseHeading variant="h3">Description</BaseHeading>
           <p>
-            {{ currentProduct.description }}
+            {{ product.description }}
           </p>
         </div>
       </div>
-    </base-card>
+    </BaseCard>
   </div>
 </template>
 
-<script>
+<script setup>
 import BaseHeading from "@/components/UI/BaseHeading.vue";
 import QuantityBlock from "@/components/UI/QuantityBlock.vue";
 import BaseButton from "@/components/UI/Buttons/BaseButton.vue";
 import BaseCard from "@/components/UI/BaseCard.vue";
-import { mapActions, mapGetters, mapState } from "vuex";
 import BaseDivider from "@/components/UI/BaseDivider.vue";
-import FadeTransition from "@/components/UI/FadeTransition.vue";
 import StarRating from "@/components/StarRating.vue";
-import BaseIcon from "@/components/UI/BaseIcon.vue";
 import Loader from "@/components/UI/Loader.vue";
 import BaseIconButton from "@/components/UI/Buttons/BaseIconButton.vue";
 import LikeIcon from "@/components/icons/LikeIcon.vue";
 import FailedHttpRequest from "@/components/FailedHttpRequest.vue";
+import { computed } from "@vue/runtime-core";
+import { useRoute } from "vue-router";
+import { useProductStore } from "@/store/useProductStore";
+import { storeToRefs } from "pinia";
+import { useLikeStore } from "@/store/useLikeStore";
+import { useCartStore } from "@/store/useCartStore";
+import { useCommonStore } from "@/store/useCommonStore";
+import { useQuantity } from "@/hooks/quantity.js";
 
-export default {
-  components: {
-    BaseHeading,
-    QuantityBlock,
-    BaseButton,
-    BaseCard,
-    BaseDivider,
-    FadeTransition,
-    StarRating,
-    BaseIcon,
-    Loader,
-    BaseIconButton,
-    LikeIcon,
-    FailedHttpRequest,
-  },
+const route = useRoute();
+const [quantity, incrementQuantity, decrementQuantity] = useQuantity();
 
-  data() {
-    return {
-      quantity: 1,
-    };
-  },
+const productStore = useProductStore();
+const likeStore = useLikeStore();
+const cartStore = useCartStore();
+const commonStore = useCommonStore();
+const { isLoading, error, serverStatus } = storeToRefs(productStore);
 
-  computed: {
-    ...mapGetters(["product", "selectedProduct", "likedProduct"]),
-    ...mapState(["error", "isLoading", "serverStatus"]),
+const product = computed(() => {
+  const thisProduct = productStore.product(route.params.id);
+  return {
+    ...thisProduct,
+    quantity: quantity.value,
+  };
+});
 
-    currentProduct() {
-      const product = this.product(+this.$route.params.id);
-      return {
-        ...product,
-        quantity: this.quantity,
-      };
-    },
+const isProductLiked = computed(
+  () => likeStore.likedProduct(product.value.id) !== undefined
+);
 
-    isProductLiked() {
-      return this.likedProduct(this.currentProduct.id) !== undefined;
-    },
+const likeBtnText = computed(() =>
+  isProductLiked.value ? "In your wishlist" : "Add to wishlist"
+);
 
-    addToWishlistBtnText() {
-      return this.isProductLiked ? "In your wishlist" : "Add to wishlist";
-    },
+const isProductAlreadyInCart = computed(
+  () => cartStore.productInCart(route.params.id) !== undefined
+);
 
-    isProductAlreadyInCart() {
-      return this.selectedProduct(+this.$route.params.id) !== undefined;
-    },
+const likeClass = computed(() => [
+  "product-page__card-like",
+  isProductLiked.value && "product-page__card-like_active",
+]);
 
-    likeClass() {
-      return [
-        "product-page__card-like",
-        this.isProductLiked && "product-page__card-like_active",
-      ];
-    },
-  },
+const openModal = (modal) => {
+  commonStore.openModal(modal);
+};
 
-  methods: {
-    ...mapActions(["setProductToCart", "openModal", "handleLikes"]),
+const like = () => {
+  likeStore.handleLikes(product.value);
+};
 
-    handleLikeClick() {
-      this.handleLikes(this.currentProduct);
-    },
-
-    handleAddToCartClick() {
-      this.setProductToCart(this.currentProduct);
-    },
-
-    incrementQuantity() {
-      this.quantity += 1;
-    },
-
-    decrementQuantity() {
-      this.quantity -= 1;
-    },
-  },
+const addToCart = () => {
+  cartStore.setProductToCart(product.value);
+  openModal("cart");
 };
 </script>
 

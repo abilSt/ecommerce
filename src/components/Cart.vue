@@ -11,27 +11,27 @@
     </div>
 
     <ul class="cart__list">
-      <li class="cart__grid" v-for="product in products" :key="product.id">
+      <li class="cart__grid" v-for="product in cart" :key="product.id">
         <img
           :src="product.image"
           class="cart__img"
           :alt="product.title"
-          @click="onClick(product.id)"
+          @click="goToProductPage(product.id)"
         />
         <p
           class="cart__item-title cart__item-text"
-          @click="onClick(product.id)"
+          @click="goToProductPage(product.id)"
         >
           {{ product.title }}
         </p>
 
         <div class="cart__mobile">
           <span>Quantity:</span>
-          <quantity-block
+          <QuantityBlock
             :quantity="product.quantity"
             @increment="incrementQuantity(product.id)"
             @decrement="decrementQuantity(product.id)"
-          ></quantity-block>
+          ></QuantityBlock>
         </div>
 
         <div class="cart__mobile">
@@ -47,109 +47,101 @@
         </div>
 
         <div class="cart__mobile-action">
-          <base-icon-button
-            @click="deleteProduct(product.id)"
+          <BaseIconButton
+            @click="removeProductFromCart(product.id)"
             variant="contained"
             iconHoverColor="#ef2525"
             iconColor="#74747474"
             opacity="1"
           >
-            <delete-icon></delete-icon>
-          </base-icon-button>
+            <DeleteIcon />
+          </BaseIconButton>
         </div>
       </li>
     </ul>
 
     <div class="cart__totals-block">
       <span class="cart__totals-block-title">Total quantity:</span>
-      <p>{{ totalQuantity }} pcs</p>
+      <p>{{ totalProductsAddedToCart }} pcs</p>
     </div>
     <div class="cart__totals-block">
       <span class="cart__totals-block-title">Total amount: </span>
       <p>${{ totalAmount }}</p>
     </div>
 
-    <div class="cart__totals-block" v-if="delivery">
+    <div class="cart__totals-block" v-if="delivery && delivery.name">
       <span class="cart__totals-block-title">Delivery price:</span>
       <p>{{ !isFreeDelivery ? "$" : "" }}{{ deliveryPrice }}</p>
     </div>
 
-    <div class="cart__totals-block" v-if="delivery">
+    <div class="cart__totals-block" v-if="delivery && delivery.name">
       <span class="cart__totals-block-title">Total:</span>
       <p>${{ total }}</p>
     </div>
   </section>
 </template>
 
-<script>
-import { mapActions } from "vuex";
+<script setup>
 import DeleteIcon from "./icons/DeleteIcon.vue";
-import BaseButton from "./UI/Buttons/BaseButton.vue";
 import BaseIconButton from "./UI/Buttons/BaseIconButton.vue";
-import IconBase from "./UI/BaseIcon.vue";
 import QuantityBlock from "./UI/QuantityBlock.vue";
-export default {
-  emits: ["onClick"],
-  components: {
-    QuantityBlock,
-    BaseButton,
-    IconBase,
-    DeleteIcon,
-    BaseIconButton,
+import { computed } from "@vue/runtime-core";
+import { useRouter } from "vue-router";
+import { useCartStore } from "@/store/useCartStore";
+import { storeToRefs } from "pinia";
+const props = defineProps({
+  // products: {
+  //   type: Array,
+  //   required: true,
+  // },
+  delivery: {
+    type: Object,
+    required: false,
   },
-  props: {
-    products: {
-      type: Array,
-      required: true,
-    },
-    delivery: {
-      type: Object,
-      required: false,
-      default: null,
-    },
-  },
+  // totalProductsAddedToCart: {
+  //   type: Number,
+  //   required: true,
+  // },
+  // totalAmount: {
+  //   type: Number,
+  //   required: true,
+  // },
+});
 
-  methods: {
-    ...mapActions(["incrementQuantity", "decrementQuantity", "deleteProduct"]),
+const emit = defineEmits(["onClick"]);
 
-    onClick(id) {
-      this.$router.push(`/product/${id}`);
-      this.$emit("onClick", "cart");
-    },
-  },
+const router = useRouter();
+const cartStore = useCartStore();
+const {cart, totalProductsAddedToCart, totalAmount} = storeToRefs(cartStore)
 
-  computed: {
-    totalAmount() {
-      return +this.products
-        .reduce(
-          (total, product) => (total += product.price * product.quantity),
-          0
-        )
-        .toFixed(2);
-    },
+const incrementQuantity = (id) => {
+  cartStore.incrementQuantity(id);
+};
 
-    totalQuantity() {
-      return this.products.reduce(
-        (total, product) => (total += product.quantity),
-        0
-      );
-    },
+const decrementQuantity = (id) => {
+  cartStore.decrementQuantity(id);
+};
 
-    isFreeDelivery() {
-      return this.delivery.price === 0;
-    },
+const removeProductFromCart = (id) => {
+  cartStore.removeProductFromCart(id);
+};
 
-    deliveryPrice() {
-      if (!this.delivery) return;
-      return this.isFreeDelivery ? "Free" : this.delivery.price;
-    },
+const isFreeDelivery = computed(() => props.delivery.price === 0);
 
-    total() {
-      return this.isFreeDelivery
-        ? this.totalAmount
-        : (this.deliveryPrice + this.totalAmount).toFixed(2);
-    },
-  },
+const deliveryPrice = computed(() => {
+  if (!props.delivery.name) return;
+  return isFreeDelivery.value ? "Free" : props.delivery.price;
+});
+
+const total = computed(() =>
+  isFreeDelivery.value
+    ? totalAmount.value
+    : (deliveryPrice.value + totalAmount.value).toFixed(2)
+);
+
+const goToProductPage = (id) => {
+  router.push(`/product/${id}`);
+  emit("onClick", "cart");
 };
 </script>
 
