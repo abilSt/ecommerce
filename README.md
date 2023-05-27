@@ -28,4 +28,5 @@ npm install
 npm run serve
 ```
 
-Если все прошло успешно, проект будет запущен на `http://localhost:8080`
+
+
